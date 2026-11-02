@@ -1,0 +1,68 @@
+[general]
+name=GeoCAR Suite
+qgisMinimumVersion=3.28
+qgisMaximumVersion=4.99
+description=Consulta imóveis do CAR (SICAR nacional e SEMAS-PA), carrega no projeto, cruza com as camadas abertas e exporta.
+version=2.5.0
+author=Miguel Ferreira
+email=geo.miguelferreira@gmail.com
+
+about=Reescrita do zero (v2), focada no essencial. Consulta de imóveis do
+    Cadastro Ambiental Rural por código, com roteamento automático por UF
+    entre o WFS público nacional do SICAR e o portal autenticado da
+    SEMAS-PA. Carrega a geometria no projeto, calcula sobreposição contra
+    as camadas vetoriais já abertas no QGIS e exporta em SHP, GPKG ou
+    XLSX. Processa listas de códigos em lote a partir de planilha.
+    .
+    Usa apenas a API nativa do QGIS e requests — sem geopandas, rasterio,
+    fiona ou openpyxl. Áreas são medidas com QgsDistanceArea elipsoidal,
+    dispensando cálculo de zona UTM.
+
+tracker=https://github.com/
+repository=https://github.com/
+
+hasProcessingProvider=no
+tags=car, sicar, cadastro ambiental rural, sobreposicao, imovel rural
+homepage=https://github.com/
+category=Vector
+icon=icon.png
+experimental=False
+deprecated=False
+
+changelog=2.3.0 - Nova aba "Buscar", para quando nao se tem o codigo do
+    CAR em maos: por municipio (qualquer UF, sem login, via WFS nacional)
+    ou por CPF/CNPJ do titular (so Para, exige token da SEMAS-PA). As
+    duas funcoes ja existiam no nucleo e nao tinham interface. O
+    resultado vai para uma tabela ordenavel; escolher um imovel joga o
+    codigo na aba Consulta e dispara a consulta. Avisa quando a lista
+    foi truncada no limite, para nao confundir o teto com o total do
+    municipio, e diz de antemao quando falta token em vez de deixar
+    descobrir pelo erro. Exporta a lista em XLSX/GPKG.
+    Nova arte: a ilustracao do imovel com a pilha de camadas passa a ser
+    o icone do plugin e o emblema do cabecalho, ao lado do logotipo.
+    2.2.0 - Corrige "complemento incompativel com essa versao do
+    QGIS": faltava qgisMaximumVersion no metadata, e sem ele o QGIS
+    assume o teto <major>.99 do minimo declarado — com minimo 3.x o
+    plugin era recusado no QGIS 4.x. Agora declara 3.28 ate 4.99.
+    Identidade visual: novo icone do plugin (barra de ferramentas, menu,
+    gerenciador de complementos, titulo e barra de tarefas da janela) e
+    logotipo no cabecalho da janela, em duas versoes — a arte original
+    verde-escura para temas claros e uma variante de luminancia
+    remapeada para o tema escuro, onde a original sumiria. A faixa mostra
+    tambem a versao instalada.
+    2.1.0 - A interface deixou de ser um painel acoplado e passou
+    a ser uma janela independente: entrada propria na barra de tarefas,
+    minimiza sozinha, pode ir para outro monitor e fica atras do QGIS ao
+    clicar no mapa. A janela lembra tamanho e posicao entre sessoes (e se
+    reposiciona sozinha caso o monitor onde estava nao exista mais).
+    Fechar apenas esconde, preservando a consulta e a tabela de
+    sobreposicoes; Esc tambem fecha sem perder nada. gui/dock.py virou
+    gui/janela.py.
+    2.0.1 - Correcoes encontradas em teste ao vivo no QGIS 4.2:
+    campos do WFS do SICAR (area/status_imovel no lugar de num_area/
+    ind_status, que nao existem na camada e deixavam area e situacao
+    vazias); area medida no CRS da geometria e nao no do projeto (dava
+    zero com projeto em Web Mercator, e o percentual mascarava o erro);
+    enums do Qt escopados para PyQt6. Acrescenta o campo "condicao" do
+    SICAR a camada e ao resumo.
+    2.0.0 - Reescrita completa (nucleo minimo).
