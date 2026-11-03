@@ -28,8 +28,11 @@ PADROES = {
     # execução para não se cruzar consigo mesmo.
     "ignorar_camadas":     "",
     "pasta_saida":         "",
-    "semas_token":         "",
-    "semas_token_em":      0,
+    # Valores PADRÃO vazios, não credenciais: o token real é digitado
+    # pelo usuário e vai para o QSettings. O Bandit confunde o nome da
+    # chave com senha embutida (B105) — falso positivo.
+    "semas_token":         "",  # nosec B105
+    "semas_token_em":      0,   # nosec B105
     # Cache de consultas. 30 dias é conservador para dado de CAR, que
     # muda em escala de meses; quem precisa do dado do dia desmarca.
     "usar_cache":          True,

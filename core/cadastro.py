@@ -26,8 +26,8 @@ import math
 from statistics import median
 
 from qgis.core import (
-    QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsGeometry,
-    QgsProject, QgsVectorLayer, QgsWkbTypes,
+    Qgis, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsGeometry,
+    QgsProject, QgsVectorLayer,
 )
 
 from . import overlay, texto
@@ -161,9 +161,8 @@ def _area_ha(geom: QgsGeometry, crs) -> float:
     if geom is None or geom.isEmpty():
         return 0.0
     med = overlay.medidor_para(crs)
-    from qgis.core import QgsUnitTypes
     bruta = med.measureArea(geom)
-    return med.convertAreaMeasurement(bruta, QgsUnitTypes.AreaSquareMeters) / 10_000.0
+    return med.convertAreaMeasurement(bruta, Qgis.AreaUnit.SquareMeters) / 10_000.0
 
 
 def _contar_vertices(geom: QgsGeometry) -> int:
@@ -228,12 +227,12 @@ def validar(mapeamento: dict, regime: str = "demais",
             f"A camada tem {n} feições. O cadastro é de UM imóvel: deixe "
             f"só o polígono dele, ou dissolva as partes antes."))
 
-    if perimetro_camada.geometryType() != QgsWkbTypes.PolygonGeometry:
+    if perimetro_camada.geometryType() != Qgis.GeometryType.Polygon:
         achados.append(_achado(
             "erro", rotulo,
             "O perímetro precisa ser polígono — a camada escolhida é de "
             + ("linha." if perimetro_camada.geometryType() ==
-               QgsWkbTypes.LineGeometry else "ponto.")))
+               Qgis.GeometryType.Line else "ponto.")))
         return resumo, achados
 
     perimetro = _dissolver(perimetro_camada, crs)
@@ -298,7 +297,7 @@ def validar(mapeamento: dict, regime: str = "demais",
         for p in _problemas_de_geometria(geom):
             achados.append(_achado("erro", rot, f"Geometria inválida: {p}."))
 
-        if geom.type() == QgsWkbTypes.PolygonGeometry:
+        if geom.type() == Qgis.GeometryType.Polygon:
             resumo["areas"][chave] = _area_ha(geom, crs)
 
         # Contenção: tudo que o cadastro declara tem de estar dentro do
@@ -308,7 +307,7 @@ def validar(mapeamento: dict, regime: str = "demais",
         except Exception:
             fora = None
         if fora is not None and not fora.isEmpty():
-            if geom.type() == QgsWkbTypes.PolygonGeometry:
+            if geom.type() == Qgis.GeometryType.Polygon:
                 area_fora = _area_ha(fora, crs)
                 if area_fora > TOLERANCIA_HA:
                     achados.append(_achado(
@@ -451,7 +450,8 @@ def memorial(camada_perimetro: QgsVectorLayer, vizinhos: dict = None,
     for nome, g in (vizinhos or {}).items():
         try:
             viz_utm[nome] = _transformar(g, crs_geo, crs_utm)
-        except Exception:
+        except Exception as e:
+            log.debug("Vizinho %s ignorado (falha ao reprojetar): %s", nome, e)
             continue
 
     linhas = []
@@ -496,10 +496,10 @@ def memorial(camada_perimetro: QgsVectorLayer, vizinhos: dict = None,
 
 
 def _fechamento(linhas) -> float:
-    de = sum(l["distancia_m"] * math.sin(math.radians(l["azimute_graus"]))
-             for l in linhas)
-    dn = sum(l["distancia_m"] * math.cos(math.radians(l["azimute_graus"]))
-             for l in linhas)
+    de = sum(ln["distancia_m"] * math.sin(math.radians(ln["azimute_graus"]))
+             for ln in linhas)
+    dn = sum(ln["distancia_m"] * math.cos(math.radians(ln["azimute_graus"]))
+             for ln in linhas)
     return math.hypot(de, dn)
 
 
@@ -522,7 +522,9 @@ def _confrontante(p, q, vizinhos_utm: dict, tolerancia_m: float) -> str:
                 a = inter.area()
                 if a > melhor_area:
                     melhor, melhor_area = nome, a
-        except Exception:
+        except Exception as e:
+            log.debug("Confrontante %s ignorado (falha na interseção): %s",
+                      nome, e)
             continue
     return melhor
 
@@ -549,7 +551,8 @@ def geometrias_de_feicoes(feicoes):
         codigo = props.get("cod_imovel") or "?"
         try:
             fs = QgsJsonUtils.stringToFeatureList(json.dumps(feat), QgsFields())
-        except Exception:
+        except Exception as e:
+            log.debug("Feição %s ignorada (GeoJSON ilegível): %s", codigo, e)
             continue
         if fs and fs[0].hasGeometry():
             saida[codigo] = fs[0].geometry()
@@ -569,13 +572,15 @@ def medir_vizinhanca(perimetro_geom, vizinhos: dict, area_imovel_ha: float):
     for codigo, geom in (vizinhos or {}).items():
         try:
             inter = perimetro_geom.intersection(geom)
-        except Exception:
+        except Exception as e:
+            log.debug("Vizinho %s ignorado (falha na interseção): %s",
+                      codigo, e)
             continue
         if inter is None or inter.isEmpty():
             continue
         # Interseção que não é área (dois polígonos que só se tocam pela
         # borda devolvem linha ou ponto) é confrontância, não invasão.
-        if inter.type() != QgsWkbTypes.PolygonGeometry:
+        if inter.type() != Qgis.GeometryType.Polygon:
             resultado.append({"codigo": codigo, "area_ha": 0.0,
                               "percentual": 0.0, "apenas_encosta": True})
             continue
@@ -598,13 +603,13 @@ def camada_de_vizinhos(vizinhos: dict, nome="CAR vizinhos"):
     """Camada em memória com os vizinhos, para corrigir o desenho
     olhando para eles em vez de para uma lista de códigos."""
     from qgis.core import QgsFeature, QgsField, QgsVectorLayer
-    from qgis.PyQt.QtCore import QVariant
+    from qgis.PyQt.QtCore import QMetaType
 
     if not vizinhos:
         return None
     camada = QgsVectorLayer(f"MultiPolygon?crs={CRS_CADASTRO}", nome, "memory")
     prov = camada.dataProvider()
-    prov.addAttributes([QgsField("codigo_car", QVariant.String)])
+    prov.addAttributes([QgsField("codigo_car", QMetaType.Type.QString)])
     camada.updateFields()
     feicoes = []
     for codigo, geom in vizinhos.items():

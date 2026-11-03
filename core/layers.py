@@ -15,13 +15,13 @@ devolvem geometria.
 import logging
 
 from qgis.core import (
-    QgsCoordinateReferenceSystem, QgsFeature, QgsField, QgsFields,
-    QgsFillSymbol, QgsJsonUtils, QgsProject, QgsSimpleFillSymbolLayer,
-    QgsSimpleLineSymbolLayer, QgsSingleSymbolRenderer, QgsUnitTypes,
-    QgsVectorLayer,
+    Qgis, QgsFeature, QgsField, QgsFields, QgsFillSymbol, QgsJsonUtils,
+    QgsProject, QgsSimpleFillSymbolLayer, QgsSimpleLineSymbolLayer,
+    QgsSingleSymbolRenderer, QgsVectorLayer,
 )
-from qgis.PyQt.QtCore import Qt, QVariant
+from qgis.PyQt.QtCore import QMetaType, Qt
 from qgis.PyQt.QtGui import QColor
+
 
 log = logging.getLogger("GeoCAR_Suite")
 
@@ -29,13 +29,13 @@ CRS_FONTE = "EPSG:4326"
 
 # Atributos que a camada do imóvel sempre carrega, na ordem.
 CAMPOS = [
-    ("codigo_car", QVariant.String),
-    ("municipio", QVariant.String),
-    ("area_ha", QVariant.Double),
-    ("situacao", QVariant.String),
-    ("condicao", QVariant.String),
-    ("responsavel", QVariant.String),
-    ("fonte", QVariant.String),
+    ("codigo_car", QMetaType.Type.QString),
+    ("municipio", QMetaType.Type.QString),
+    ("area_ha", QMetaType.Type.Double),
+    ("situacao", QMetaType.Type.QString),
+    ("condicao", QMetaType.Type.QString),
+    ("responsavel", QMetaType.Type.QString),
+    ("fonte", QMetaType.Type.QString),
 ]
 
 
@@ -139,9 +139,9 @@ LARGURA_TOPO_MM = 0.46
 
 def _mm(camada_simbolo):
     try:
-        camada_simbolo.setWidthUnit(QgsUnitTypes.RenderMillimeters)
-    except Exception:
-        pass
+        camada_simbolo.setWidthUnit(Qgis.RenderUnit.Millimeters)
+    except Exception as e:
+        log.debug("Não consegui definir a unidade em mm: %s", e)
     return camada_simbolo
 
 
@@ -165,8 +165,8 @@ def _camadas_do_simbolo():
         try:
             linha.setPenJoinStyle(Qt.PenJoinStyle.RoundJoin)
             linha.setPenCapStyle(Qt.PenCapStyle.RoundCap)
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("Não consegui arredondar o contorno: %s", e)
     return fundo, base, topo
 
 
@@ -233,8 +233,6 @@ def camadas_poligonais_do_projeto(ignorar=()):
     É isto que substitui a configuração manual de caminho por base: o
     plugin cruza com o que já está aberto no QGIS.
     """
-    from qgis.core import QgsWkbTypes
-
     ignorar = {str(n) for n in ignorar}
     resultado = []
     for camada in QgsProject.instance().mapLayers().values():
@@ -242,7 +240,7 @@ def camadas_poligonais_do_projeto(ignorar=()):
             continue
         if camada.name() in ignorar or camada.id() in ignorar:
             continue
-        if camada.geometryType() == QgsWkbTypes.NullGeometry:
+        if camada.geometryType() == Qgis.GeometryType.Null:
             continue
         resultado.append(camada)
     return resultado

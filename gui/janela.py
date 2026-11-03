@@ -24,6 +24,7 @@ continuam lá quando a janela é reaberta. Fechar sem querer (ou com
 Esc) não custa trabalho perdido.
 """
 
+import logging
 import os
 import re
 
@@ -39,6 +40,8 @@ from .cadastro import AbaCadastro
 from .configuracoes import AbaConfiguracoes
 from .consulta import AbaConsulta
 from .lote import AbaLote
+
+log = logging.getLogger("GeoCAR_Suite")
 
 CHAVE_GEOMETRIA = "GeoCAR_Suite/geometria_janela"
 TAMANHO_PADRAO = (860, 720)
@@ -227,8 +230,9 @@ class JanelaGeoCAR(QDialog):
     def _salvar_geometria(self):
         try:
             QSettings().setValue(CHAVE_GEOMETRIA, self.saveGeometry())
-        except Exception:
-            pass  # preferência cosmética: nunca vale travar por isso
+        except Exception as e:
+            # preferência cosmética: nunca vale travar por isso
+            log.debug("Não consegui salvar a geometria da janela: %s", e)
 
     def _restaurar_geometria(self):
         try:
@@ -236,8 +240,8 @@ class JanelaGeoCAR(QDialog):
             if isinstance(geo, QByteArray) and not geo.isEmpty():
                 self.restoreGeometry(geo)
                 self._garantir_visivel()
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("Não consegui restaurar a geometria da janela: %s", e)
 
     def _garantir_visivel(self):
         """
@@ -258,8 +262,8 @@ class JanelaGeoCAR(QDialog):
                 moldura = self.frameGeometry()
                 moldura.moveCenter(centro)
                 self.move(moldura.topLeft())
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("Não consegui centralizar a janela: %s", e)
 
     # ── abas ─────────────────────────────────────────────
     def _ao_trocar_aba(self, indice):

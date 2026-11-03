@@ -54,7 +54,7 @@ class ConsultaTask(QgsTask):
 
     def __init__(self, codigo_car, timeout=30, com_sobreposicao=True,
                  ignorar_camadas=()):
-        super().__init__(f"GeoCAR: consultando {codigo_car}", QgsTask.CanCancel)
+        super().__init__(f"GeoCAR: consultando {codigo_car}", QgsTask.Flag.CanCancel)
         self.codigo_car = codigo_car
         self.timeout = timeout
         self.com_sobreposicao = com_sobreposicao
@@ -105,7 +105,7 @@ class LoteTask(QgsTask):
 
     def __init__(self, codigos, timeout=30):
         super().__init__(f"GeoCAR: lote ({len(codigos)} imóveis)",
-                         QgsTask.CanCancel)
+                         QgsTask.Flag.CanCancel)
         self.codigos = list(codigos)
         self.timeout = timeout
         self.usar_cache = bool(config.get("usar_cache"))
@@ -154,9 +154,9 @@ class BuscaTask(QgsTask):
 
     def __init__(self, modo, timeout=30, cpf_cnpj="", uf="", municipio="",
                  limite=1000):
-        rotulo = (f"GeoCAR: buscando por CPF/CNPJ" if modo == "cpf"
+        rotulo = ("GeoCAR: buscando por CPF/CNPJ" if modo == "cpf"
                   else f"GeoCAR: imóveis em {municipio} ({uf})")
-        super().__init__(rotulo, QgsTask.CanCancel)
+        super().__init__(rotulo, QgsTask.Flag.CanCancel)
         self.modo = modo
         self.timeout = timeout
         self.cpf_cnpj = cpf_cnpj
@@ -213,7 +213,7 @@ class VizinhancaTask(QgsTask):
 
     def __init__(self, uf, xmin, ymin, xmax, ymax, municipio="",
                  excluir=None, timeout=40, limite=200):
-        super().__init__(f"GeoCAR: vizinhança em {uf}", QgsTask.CanCancel)
+        super().__init__(f"GeoCAR: vizinhança em {uf}", QgsTask.Flag.CanCancel)
         self.uf = uf
         self.caixa = (xmin, ymin, xmax, ymax)
         self.municipio = municipio

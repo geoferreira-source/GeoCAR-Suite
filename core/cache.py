@@ -127,8 +127,9 @@ def limpar() -> bool:
         try:
             with _conectar() as con:
                 con.execute("VACUUM")   # devolve o espaço ao disco
-        except Exception:
-            pass
+        except Exception as e:
+            # Compactar é só um bônus: os dados já foram apagados.
+            log.debug("VACUUM do cache falhou (sem impacto): %s", e)
         return True
     except Exception as e:
         log.debug("Não consegui limpar o cache: %s", e)

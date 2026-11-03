@@ -551,8 +551,9 @@ class AbaCadastro(QWidget):
             with open(caminho, "w", encoding="utf-8-sig", newline="") as fh:
                 w = csv.writer(fh, delimiter=";")
                 w.writerow(cadastro.COLUNAS_MEMORIAL)
-                for l in res["linhas"]:
-                    w.writerow([l.get(c, "") for c in cadastro.COLUNAS_MEMORIAL])
+                for linha in res["linhas"]:
+                    w.writerow([linha.get(c, "")
+                                for c in cadastro.COLUNAS_MEMORIAL])
             return True, caminho
         except Exception as e:
             return False, str(e)

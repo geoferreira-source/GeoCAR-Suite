@@ -15,11 +15,10 @@ import logging
 from pathlib import Path
 
 from qgis.core import (
-    QgsCoordinateReferenceSystem, QgsCoordinateTransformContext, QgsFeature,
-    QgsField, QgsFields, QgsProject, QgsVectorFileWriter, QgsVectorLayer,
-    QgsWkbTypes,
+    Qgis, QgsCoordinateReferenceSystem, QgsFeature, QgsField, QgsFields,
+    QgsProject, QgsVectorFileWriter, QgsVectorLayer, QgsWkbTypes,
 )
-from qgis.PyQt.QtCore import QVariant
+from qgis.PyQt.QtCore import QMetaType
 
 log = logging.getLogger("GeoCAR_Suite")
 
@@ -111,7 +110,7 @@ def exportar_camada(camada: QgsVectorLayer, caminho: str, formato: str = None,
         # código simples nas antigas — tratamos as duas formas.
         codigo = resultado[0] if isinstance(resultado, tuple) else resultado
         mensagem = resultado[1] if isinstance(resultado, tuple) and len(resultado) > 1 else ""
-        if codigo != QgsVectorFileWriter.NoError:
+        if codigo != QgsVectorFileWriter.WriterError.NoError:
             return False, f"Erro ao gravar ({codigo}): {mensagem}"
     except Exception as e:
         return False, str(e)
@@ -125,7 +124,7 @@ def _camada_com_nomes_curtos(camada: QgsVectorLayer) -> QgsVectorLayer:
     # Uma camada sem geometria (tabela de sobreposições, resultado do
     # lote) tem wkbType NoGeometry, e "NoGeometry?crs=..." não cria
     # camada válida — o provedor de memória espera "None" nesse caso.
-    if camada.geometryType() == QgsWkbTypes.NullGeometry:
+    if camada.geometryType() == Qgis.GeometryType.Null:
         uri = "None"
     else:
         uri = f"{QgsWkbTypes.displayString(camada.wkbType())}?crs={camada.crs().authid()}"
@@ -135,7 +134,12 @@ def _camada_com_nomes_curtos(camada: QgsVectorLayer) -> QgsVectorLayer:
     usados = set()
     novos = []
     for campo in camada.fields():
-        novos.append(QgsField(_abreviar(campo.name(), usados), campo.type()))
+        # Copiar o campo (em vez de remontar com campo.type()) preserva
+        # tipo, comprimento e precisão — e campo.type() não existe mais
+        # no Qt6.
+        novo = QgsField(campo)
+        novo.setName(_abreviar(campo.name(), usados))
+        novos.append(novo)
     prov.addAttributes(novos)
     copia.updateFields()
 
@@ -166,13 +170,13 @@ def exportar_tabela(linhas: list, colunas: list, caminho: str,
     for col in colunas:
         valor = amostra.get(col)
         if isinstance(valor, bool):
-            tipo = QVariant.String
+            tipo = QMetaType.Type.QString
         elif isinstance(valor, int):
-            tipo = QVariant.Int
+            tipo = QMetaType.Type.Int
         elif isinstance(valor, float):
-            tipo = QVariant.Double
+            tipo = QMetaType.Type.Double
         else:
-            tipo = QVariant.String
+            tipo = QMetaType.Type.QString
         campos.append(QgsField(col, tipo))
 
     camada = QgsVectorLayer("None", nome_camada, "memory")

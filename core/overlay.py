@@ -22,9 +22,9 @@ Usa só a API do QGIS: nada de geopandas, shapely ou fiona.
 import logging
 
 from qgis.core import (
-    QgsCoordinateTransform, QgsDistanceArea, QgsFeatureRequest, QgsProject,
-    QgsUnitTypes, QgsWkbTypes,
+    Qgis, QgsCoordinateTransform, QgsDistanceArea, QgsFeatureRequest, QgsProject,
 )
+
 
 log = logging.getLogger("GeoCAR_Suite")
 
@@ -65,7 +65,7 @@ def medidor_para(crs) -> QgsDistanceArea:
 def _area_ha(medidor: QgsDistanceArea, geom) -> float:
     """Área da geometria em hectares, convertida pela própria API."""
     bruta = medidor.measureArea(geom)
-    m2 = medidor.convertAreaMeasurement(bruta, QgsUnitTypes.AreaSquareMeters)
+    m2 = medidor.convertAreaMeasurement(bruta, Qgis.AreaUnit.SquareMeters)
     return m2 / 10_000.0
 
 
@@ -153,7 +153,7 @@ def calcular(camada_imovel, camadas_base=None, ignorar=(), limite_nomes=5,
                     continue
                 # Descarta interseções degeneradas (linha/ponto no
                 # encosto de dois polígonos que só se tocam).
-                if inter.type() != QgsWkbTypes.PolygonGeometry:
+                if inter.type() != Qgis.GeometryType.Polygon:
                     continue
 
                 # Mede no CRS do imóvel, para todas as bases caírem na
