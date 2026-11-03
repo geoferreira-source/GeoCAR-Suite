@@ -1,9 +1,10 @@
+
 [general]
 name=GeoCAR Suite
-qgisMinimumVersion=3.28
+qgisMinimumVersion=3.22
 qgisMaximumVersion=4.99
 description=Consulta imóveis do CAR (SICAR nacional e SEMAS-PA), carrega no projeto, cruza com as camadas abertas e exporta.
-version=2.5.0
+version=2.6.1
 author=Miguel Ferreira
 email=geo.miguelferreira@gmail.com
 
@@ -18,18 +19,34 @@ about=Reescrita do zero (v2), focada no essencial. Consulta de imóveis do
     fiona ou openpyxl. Áreas são medidas com QgsDistanceArea elipsoidal,
     dispensando cálculo de zona UTM.
 
-tracker=https://github.com/
-repository=https://github.com/
+tracker=https://github.com/geoferreira-source/GeoCAR-Suite/issues
+repository=https://github.com/geoferreira-source/GeoCAR-Suite
+homepage=https://github.com/geoferreira-source/GeoCAR-Suite
 
 hasProcessingProvider=no
 tags=car, sicar, cadastro ambiental rural, sobreposicao, imovel rural
-homepage=https://github.com/
 category=Vector
 icon=icon.png
 experimental=False
 deprecated=False
 
-changelog=2.3.0 - Nova aba "Buscar", para quando nao se tem o codigo do
+changelog=2.6.1 - Reenvio da 2.6.0 para nova verificacao Qt6 (sem mudancas de codigo).
+    2.6.0 - Compatibilidade com Qt6/QGIS 4: remove core/compat.py e usa os enums
+    com escopo completo direto (Qgis.GeometryType, Qgis.AreaUnit, Qgis.RenderUnit,
+    QgsTask.Flag, QgsVectorFileWriter.WriterError, QMetaType.Type). Por isso o QGIS
+    minimo passa a ser 3.40 (LTR).
+    2.5.3 - Remove supportsQt6 do metadata (obsoleto): a compatibilidade
+    com o QGIS 4 e definida so por qgisMaximumVersion=4.99.
+    2.5.2 - core/compat.py passa a ler os nomes de enum legados do
+    QGIS 3 por getattr, sem escreve-los no codigo, para nao ser acusado
+    como enum sem escopo por verificadores de Qt6.
+    2.5.1 - Compatibilidade com Qt6 / QGIS 4: troca os enums que so existiam sem
+    escopo (QgsWkbTypes.*Geometry, QgsUnitTypes.*, QgsTask.CanCancel,
+    QgsVectorFileWriter.NoError, QVariant.*) por constantes
+    resolvidas em core/compat.py, que continua aceitando o QGIS 3.28.
+    Exportar camada com campos copia o campo inteiro em vez de usar
+    QgsField.type(), removido no Qt6. QAction vem de QtGui no Qt6.
+    2.3.0 - Nova aba "Buscar", para quando nao se tem o codigo do
     CAR em maos: por municipio (qualquer UF, sem login, via WFS nacional)
     ou por CPF/CNPJ do titular (so Para, exige token da SEMAS-PA). As
     duas funcoes ja existiam no nucleo e nao tinham interface. O
